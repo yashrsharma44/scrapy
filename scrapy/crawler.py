@@ -2,11 +2,14 @@ import six
 import signal
 import logging
 import warnings
-import asyncio
+try:
+    import asyncio
+except ImportError :
+    pass
 
 import sys
-from twisted.internet import asyncioreactor
-asyncioreactor.install(asyncio.get_event_loop())
+#from twisted.internet import asyncioreactor
+#asyncioreactor.install(asyncio.get_event_loop())
 from twisted.internet import reactor, defer
 from zope.interface.verify import verifyClass, DoesNotImplement
 
