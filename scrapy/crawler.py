@@ -83,8 +83,11 @@ class Crawler(object):
             self.spider = self._create_spider(*args, **kwargs)
             self.engine = self._create_engine()
             start_requests = self.spider.start_requests()
-            start_requests = start_requests.__aiter__()
-            defer.maybeDeferred(self.engine.open_spider(self.spider, start_requests))
+            try:
+                start_requests = start_requests.__aiter__()
+            except Exception as e:
+                start_requests = iter(start_requests)
+            self.engine.open_spider(self.spider, start_requests)
             await defer.maybeDeferred(self.engine.start)
         except Exception:
             # In Python 2 reraising an exception after yield discards

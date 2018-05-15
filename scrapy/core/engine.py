@@ -28,7 +28,10 @@ class Slot(object):
     def __init__(self, start_requests, close_if_idle, nextcall, scheduler):
         self.closing = False
         self.inprogress = set() # requests in progress
-        self.start_requests = start_requests.__aiter__()
+        try:
+            self.start_requests = start_requests.__aiter__()
+        except:
+            self.start_requests = iter(start_requests)
         self.close_if_idle = close_if_idle
         self.nextcall = nextcall
         self.scheduler = scheduler
@@ -127,7 +130,12 @@ class ExecutionEngine(object):
 
         if slot.start_requests and not self._needs_backout(spider):
             try:
-                request = await slot.start_requests.__anext__()
+                try:
+                    request = await slot.start_requests.__anext__()
+                except AttributeError:
+                    request = next(slot.start_requests)
+            except StopIteration:
+                slot.start_requests = None
             except StopAsyncIteration:
                 slot.start_requests = None
             except Exception:
@@ -263,7 +271,7 @@ class ExecutionEngine(object):
         slot = Slot(start_requests, close_if_idle, nextcall, scheduler)
         self.slot = slot
         self.spider = spider
-        mustbe_deferred(scheduler.open(spider))
+        scheduler.open(spider)
         await self.scraper.open_spider(spider)
         self.crawler.stats.open_spider(spider)
         await self.signals.send_catch_log_deferred(signals.spider_opened, spider=spider)
