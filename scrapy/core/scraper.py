@@ -17,6 +17,7 @@ from scrapy.http import Request, Response
 from scrapy.item import BaseItem
 from scrapy.core.spidermw import SpiderMiddlewareManager
 from scrapy.utils.request import referer_str
+from scrapy.inline import inline_requests
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +144,7 @@ class Scraper(object):
     def call_spider(self, result, request, spider):
         result.request = request
         dfd = defer_result(result)
-        dfd.addCallbacks(request.callback or spider.parse, request.errback)
+        dfd.addCallbacks(inline_requests(request.callback or spider.parse), request.errback)
         return dfd.addCallback(iterate_spider_output)
 
     def handle_spider_error(self, _failure, request, response, spider):
@@ -187,6 +188,8 @@ class Scraper(object):
             dfd.addBoth(self._itemproc_finished, output, response, spider)
             return dfd
         elif output is None:
+            pass
+        elif isinstance(output,Response):
             pass
         else:
             typename = type(output).__name__
